@@ -103,19 +103,24 @@
                   (cons (car coeffs)
                         (mapcar (lambda (x) (/ x 2.0d0)) (cdr coeffs)))))))
 
-(defun filter (array flt)
-  "Convolve filter with the signal"
+(defun convolve (array flt &optional (drop-ratio 1))
+  "Convolve two sequences"
   (declare (optimize (speed 3))
-           (type (simple-array double-float) array flt))
+           (type (simple-array double-float) array flt)
+           (type (integer 1 #.most-positive-fixnum) drop-ratio))
   (let* ((len1 (length array))
          (len2 (- (length flt) 1))
-         (new-array (make-array len1
+         (res-len (floor len1 drop-ratio))
+         (new-array (make-array res-len
                                 :initial-element 0d0
                                 :element-type 'double-float)))
     (declare (type (simple-array double-float) new-array))
-    (loop for i from 0 below len1 do
+    (loop
+       for i fixnum from 0 below res-len
+       for array-center fixnum from 0 by drop-ratio
+       do
          (loop for j from (- len2) to len2 do
-              (let ((idx (+ i j)))
+              (let ((idx (+ array-center j)))
                 (setq idx
                       (cond
                         ((< idx 0) (- idx))
@@ -124,22 +129,6 @@
                 (incf (aref new-array i)
                       (* (aref array idx)
                          (aref flt (abs j)))))))
-    new-array))
-
-(defun drop-samples (array n)
-  "Retain every N-th sample"
-  (declare (type (simple-array (double-float)) array)
-           (type (integer 1 #.most-positive-fixnum) n)
-           (optimize (speed 3)))
-  (let* ((len (floor (length array) n))
-         (new-array (make-array len :element-type 'double-float)))
-    (declare (type (simple-array (double-float)) new-array))
-    (loop
-       for idx1 fixnum below len
-       for idx2 fixnum from 0 by n
-       do
-         (setf (aref new-array idx1)
-               (aref array idx2)))
     new-array))
 
 (defun downsample (array ratio &key (filter-order 50 filter-order-given)
@@ -168,8 +157,7 @@ Values about 1/7 are good."
            (:poly10 #'filter-fourier-poly10)
            (:poly4 #'filter-fourier-poly4)
            (t #'filter-fourier-poly10)))) ; to silence the compiler
-    (drop-samples
-     (filter array (if error-given
-                       (filter-coeffs-with-error error minimal-order maximal-order)
-                       (n-filter-coeffs filter-order)))
-     ratio)))
+    (convolve array (if error-given
+                        (filter-coeffs-with-error error minimal-order maximal-order)
+                        (n-filter-coeffs filter-order))
+              ratio)))
