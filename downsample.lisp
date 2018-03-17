@@ -49,10 +49,10 @@
   "N-th coefficient of filter Fourier series decomposition"
   (declare (type integer n))
   (flet ((integrand (w n)
-           (* (funcall *filter-function* (abs w)) (cos (* 2d0 pi n w)))))
+           (* (funcall *filter-function* w) (cos (* 2d0 pi n w)))))
     (let ((delta 1d-4)) ; Must depend on n really
-      (* (/ delta 6) (if (zerop n) 1 2)
-         (loop for w from (- (* *a* 0.5d0 (1+ *b*))) to (* *a* 0.5d0 (1+ *b*)) by delta sum
+      (* (/ delta 6) (if (zerop n) 2 4)
+         (loop for w from 0d0 to (* *a* 0.5d0 (1+ *b*)) by delta sum
               (let ((x1 w)
                     (x2 (+ w delta))
                     (x3 (+ w (/ delta 2d0))))
