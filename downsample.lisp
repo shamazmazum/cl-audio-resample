@@ -1,6 +1,6 @@
 (in-package cl-audio-downsample)
 
-(declaim (type (double-float 0d0 1d0) *a* *b*))
+(declaim (type (double-float 0d0 1d0) *cutoff* *transition*))
 (defvar *transition* (/ 7d0)
   "Width of transition region, must be < 1d0. Values from 1/20 to 1/7 are good.
 Smaller values of *TRANSITION* require a filter of higher order.")
