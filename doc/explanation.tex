@@ -72,7 +72,7 @@ our signal with $\frac{sin(\omega_{0}x)}{\pi x}$ using \ref{convolve2} (provided
 a problem with that, although. When convolving numerically, you need to use \textbf{all} samples in you signal to get a new value
 for \textbf{one} sample. That's because support of $\frac{sin(\omega_{0}x)}{\pi x}$ (i.e. set of values where the function does not equal
 zero, with possible exception of a set with measure zero) is the whole set of real numbers, $\mathbb{R}$. What we need is a
-filtering function with \textbf{compact support} or in the case of functions defined of $\mathbb{R}$, \textbf{bounded support}. 
+filtering function with \textbf{compact support} or in the case of functions defined on $\mathbb{R}$, \textbf{bounded support}.
 Unfortunately, these functions cannot act as an ideal low-pass filter, but they can be close to it. Usually people use the same
 $\frac{sin(x)}{\pi x}$ function multiplied by some window function to make its support compact, but I propose a different approach.
 I do not know, if it is known to anybody (most likely to), in this case I just "reinvented" it on my own.
@@ -114,7 +114,7 @@ Integration and limit switched places because integrated function does not have 
 an integral $\int_{-\infty}^{\infty} sin(nx) f(x)dx$ converges to zero as $n \to \infty$. On the other hand $\int_{\infty}^{\infty} \frac{sin(nx)}{\pi x}$ is always 1,
 no matter what value $n$ takes, so
 \begin{equation}
-\lim_{n \to \infty} \int_{-\infty}^{\infty} f_{n}(x)\phi(x)dx = \phi(0) = \int_{\infty}^{\infty} \delta(x)\phi(x)dx
+\lim_{n \to \infty} \int_{-\infty}^{\infty} f_{n}(x)\phi(x)dx = \phi(0) = \int_{-\infty}^{\infty} \delta(x)\phi(x)dx
 \end{equation}
 
 $\delta(x)$ is called a \textbf{delta-function} and is defined simply as
@@ -287,7 +287,7 @@ and with a transition range $b=1/20$ and an error $0.0001$. Settings which use f
 \end{figure}
 
 \section{Conclusion}
-Although cl-audio-downsample shows test results comparable to FFmpeg's swr, it's no much for soxr resampler. It also has implementation limitations, e.g. it cannot downsample from 96kHz to 44.1kHZ (only to 48KHz). What's more
+Although cl-audio-downsample shows test results comparable to FFmpeg's swr, it's no match for soxr resampler. It also has implementation limitations, e.g. it cannot downsample from 96kHz to 44.1kHZ (only to 48KHz). What's more
 important, is that I observed that aliasing does not vanish much when you choose $b: 0 < b < 1/20$ with some constant error. I cannot explain it now, maybe it's just a computational error. It's also not very fast, but this is
 most certainly a flaw of the implementation.
 
