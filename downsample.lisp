@@ -8,26 +8,30 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   "How much of the original band to keep? Varies from 0d0 to 1d0")
 
 (declaim (ftype (function (double-float &optional) double-float)
-                filter-fourier-poly4
-                filter-fourier-poly10)
+                filter-fourier-poly
+                filter-fourier-trig-poly)
          (type (function (double-float &optional) double-float)
                *filter-function*))
-(defun filter-fourier-poly4 (w)
-  "Fourier transform of low-pass filter, variant 1"
-  (declare (type double-float w))
-  (let ((eps (/ (* *cutoff* *transition*) 2d0))
-        (x (- w (/ (* *cutoff* (- 1d0 *transition*)) 2d0))))
-    (declare (type double-float eps x))
-    (cond
-      ((< w (/ (* *cutoff* (- 1d0 *transition*)) 2d0)) 1d0)
-      ((> w (/ (* *cutoff* (+ 1d0 *transition*)) 2d0)) 0d0)
-      (t
-       (+ (expt (/ x 2d0 eps) 4d0)
-          (- (* 2d0 (expt (/ x 2d0 eps) 2d0)))
-          1d0)))))
 
-(defun filter-fourier-poly10 (w)
-  "Fourier transform of low-pass filter, variant 2"
+(defun filter-fourier-trig-poly (w)
+  "Fourier transform of low-pass filter, trigonometric polynomial variant"
+  (declare (type double-float w))
+  (let* ((eps (/ (* *cutoff* *transition*) 2d0))
+         (x (/ (- w (- (* 0.5d0 *cutoff*) eps)) (* 2d0 eps))))
+      (declare (type double-float eps x))
+      (cond
+        ((< w (/ (* *cutoff* (- 1d0 *transition*)) 2d0)) 1d0)
+        ((> w (/ (* *cutoff* (+ 1d0 *transition*)) 2d0)) 0d0)
+        (t
+         (/
+          (+
+           (* -1d0 (cos (* 3 pi x)))
+           (* 9d0 (cos (* pi x)))
+           8d0)
+          16d0)))))
+
+(defun filter-fourier-poly (w)
+  "Fourier transform of low-pass filter, polynomial variant"
   (declare (type double-float w))
   (let* ((eps (/ (* *cutoff* *transition*) 2d0))
          (x (/ (- w (- (* 0.5d0 *cutoff*) eps)) (* 2d0 eps))))
@@ -37,13 +41,13 @@ Smaller values of *TRANSITION* require a filter of higher order.")
         ((> w (/ (* *cutoff* (+ 1d0 *transition*)) 2d0)) 0d0)
         (t
          (+
-          (* 4d0 (expt x 10))
-          (- (* 15d0 (expt x 8)))
-          (* 20d0 (expt x 6))
-          (- (* 10d0 (expt x 4)))
+          (* 20d0 (expt x 7))
+          (* -70d0 (expt x 6))
+          (* 84d0 (expt x 5))
+          (* -35d0 (expt x 4))
           1d0)))))
 
-(defvar *filter-function* #'filter-fourier-poly10
+(defvar *filter-function* #'filter-fourier-poly
   "Which filter function to use?")
 
 (defun get-fourier-coeff (n)
@@ -136,17 +140,17 @@ Smaller values of *TRANSITION* require a filter of higher order.")
                                  (error 0d0 error-given)
                                  (minimal-order 10 minimal-order-given)
                                  (maximal-order 200 maximal-order-given)
-                                 (filter :poly10)
+                                 (filter :poly)
                                  (transition *transition*))
   "Downsample a signal ARRAY by a ratio RATIO. You can specify the filter order
 in FILTER-ORDER or it can be calculated based on ERROR value. You can use two
-filters: :POLY4 and :POLY10. Also you can specify a transition region TRANSITION.
+filters: :POLY and :TRIG-POLY. Also you can specify a transition region TRANSITION.
 Values about 1/7 are good."
   (declare (type (simple-array (double-float)) array)
            (type (integer 1) ratio)
            (type (integer 1) filter-order)
            (type (double-float 0d0) error)
-           (type (member :poly10 :poly4) filter))
+           (type (member :poly :trig-poly) filter))
   (if (and filter-order-given
            (or error-given minimal-order-given maximal-order-given))
       (error
@@ -155,9 +159,9 @@ Values about 1/7 are good."
         (*transition* transition)
         (*filter-function*
          (case filter
-           (:poly10 #'filter-fourier-poly10)
-           (:poly4 #'filter-fourier-poly4)
-           (t #'filter-fourier-poly10)))) ; to silence the compiler
+           (:poly #'filter-fourier-poly)
+           (:trig-poly #'filter-fourier-trig-poly)
+           (t #'filter-fourier-poly)))) ; to silence the compiler
     (convolve array (if error-given
                         (filter-coeffs-with-error error minimal-order maximal-order)
                         (n-filter-coeffs filter-order))

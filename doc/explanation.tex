@@ -20,15 +20,15 @@
 \section{Fourier transform}
 The Fourier transform of function $f(x)$ is a function $F(\xi)$ defined by
 \begin{equation}
-F(\xi) = \int f(x)e^{ix\xi}dx
+F(\xi) = \int_{-\infty}^{\infty} f(x)e^{ix\xi}dx
 \end{equation}
 and its inverse transform is defined by 
 \begin{equation}
-f(x) = \frac{1}{2\pi}\int F(\xi)e^{-ix\xi}d\xi
+f(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} F(\xi)e^{-ix\xi}d\xi
 \end{equation}
 Where direct and inverse transforms exist is a really hard question to be discussed here, so I will only say
 that if the inverse transform exists for a particular $F(\xi)$ then $F(\xi)$ is decaying to zero when 
-$\left|\xi\right|$ moves toward infinity, in other words, $\lim_{\left|\xi\right| \to \infty} F(\xi) \to 0$.
+real part of $\xi$ moves toward infinity, in other words, $\lim_{Re \xi \to \infty} F(\xi) \to 0$.
 I also will use Fourier transform operator $Ff(x)$ which means "apply Fourier transform to a function $f(x)$".
 Fourier transform has some useful properties, some of them I describe below:
 \begin{description}
@@ -61,7 +61,7 @@ The inverse transform is $f(x) = \frac{sin(x)}{\pi x}$. There is a Shannon sampl
 bandlimited signal (i.e. it has no frequencies above some $f_{0}=\frac{\omega_{0}}{2\pi}$) can be represented as 
 shifted versions of functions $\frac{sin(\omega_{0}x)}{\pi x}$ multiplied by samples of that signal taken at frequency
 $2f_{0}$ Hz. That means if you want to store a signal which contains, say, sine waves at frequency
-at most 1kHz, you need to take samples at frequency 2Hz (or higher). If you choose frequency less than $2f_{0}$ then
+at most 1kHz, you need to take samples at frequency 2kHz (or higher). If you choose frequency less than $2f_{0}$ then
 some of high frequency data will be "misinterpreted" as low frequency data.
 \section{Signal filtering}
 So if you want to downsample your audio data taken with sampling frequency, say, 96kHz to sampling frequency 48kHz, taking
@@ -70,15 +70,15 @@ and become audible. This thing is called aliasing. So before dropping any data y
 above $newsamplerate / 2$. To do so we will use the image multiplication property of the Fourier transform and convolve
 our signal with $\frac{sin(\omega_{0}x)}{\pi x}$ using \ref{convolve2} (provided that our signal begins from time $x=0$). There is
 a problem with that, although. When convolving numerically, you need to use \textbf{all} samples in you signal to get a new value
-for \textbf{one} sample. That's because support of $\frac{sin(\omega_{0}x)}{\pi x}$ (i.e. set of values where the function does not equal
-zero, with possible exception of a set with measure zero) is the whole set of real numbers, $\mathbb{R}$. What we need is a
-filtering function with \textbf{compact support} or in the case of functions defined on $\mathbb{R}$, \textbf{bounded support}.
-Unfortunately, these functions cannot act as an ideal low-pass filter, but they can be close to it. Usually people use the same
-$\frac{sin(x)}{\pi x}$ function multiplied by some window function to make its support compact, but I propose a different approach.
-I do not know, if it is known to anybody (most likely to), in this case I just "reinvented" it on my own.
+for \textbf{one} sample. That's because support of $\frac{sin(\omega_{0}x)}{\pi x}$ (i.e. set of values where the function does
+not equal to zero, with possible exception of a set with measure zero) is the whole set of real numbers, $\mathbb{R}$. What we
+need is a filtering function with \textbf{compact support} or in the case of functions defined on $\mathbb{R}$, \textbf{bounded
+  support}. Unfortunately, these functions cannot act as an ideal low-pass filter, but they can be close to it. Usually people use
+the same $\frac{sin(x)}{\pi x}$ function multiplied by some window function to make its support compact, but I propose a different
+approach. I do not know, if it is known to anybody (most likely to), in this case I just "reinvented" it on my own.
 
 \section {Inverse Fourier transform of some "noninvertable" functions}
-Can you invert a Fourier image, say, $F(\xi)=1$? No, you cannot. That's because it does not die out when $\left|\xi\right|$
+Can you invert a Fourier image, say, $F(\xi)=1$? No, you cannot. That's because it does not die out when real part of $\xi$
 moves toward infinity. But you still can "nominate" some "function" to be its inverse transformed version! To understand it
 you will need a concept of weak convergence. For a functions $f \in H$, where $H$ is some Hilbert space, a sequence $f_{n} \in H$
 is said to be convergent to $f$ if $\lim_{n \to \infty} \left<f_{n},g\right> = \left<f,g\right>$ for all $g \in H$. It is denoted as
@@ -127,7 +127,7 @@ at point $x=0$. Also you can define $\left<\delta(x-a),f(x)\right> = f(a)$. You 
 Another very important property on delta-function is that $f*\delta = f$, i.e. convolution of any function with delta is that function. For some functions you can define
 so-called \textbf{convolution algebra} where $\delta(x)$ is like 1 in "ordinary" algebra and convolution of functions is like multiplication of numbers.
 
-Speaking of Fourier transform, $F[\frac{sin (\omega_{0} x)}{\pi x}](\xi)$ is \ref{idealfilter}. If $n \to \infty$, the Fourier image becomes simply $F(\xi) = 1$. Inverse
+Speaking of Fourier transform, $F[\frac{sin (\omega_{0} x)}{\pi x}](\xi)$ is \ref{idealfilter}. If $\omega_{0} \to \infty$, the Fourier image becomes simply $F(\xi) = 1$. Inverse
 transform of that $F(\xi)$ becomes $\delta(x)$. If you want to pass your signal through such a filter (it's like identity filter, which does not change your signal), you must
 convolve it with $\delta(x)$: $f*\delta = f(x)$. So as you can see, your signal is not changed indeed.
 
@@ -159,58 +159,88 @@ The equation above can be rewritten if members like $exp(ia\xi)$ and $exp(-ia\xi
 \end{aligned}
 \end{equation}
 
-Good, functions like $1$ and $cos(n \frac{2 \pi}{\omega_{ref}} \xi)$ with different $n$ are orthonormal to each other on a segment $[-\omega_{ref}/2, \omega_{ref}/2]$. They constitute a basis
-on that segment for functions called \textbf{even functions}, that is function $f(x)$ is even if $f(x)=f(-x)$. Our ideal filter \ref{idealfilter} is an even function. You can find $\phi_{n}$
-calculating a scalar product of $F(\xi)$ in \ref{idealfilter} and functions from our basis set and normalising. Introduce a variable $a \leq 1$, so $\omega_{0} = a \omega_{ref}/2$. We get the following:
+Good, functions like $\sqrt{\frac{1}{\omega_{ref}}}$ and $\sqrt{\frac{2}{\omega_{ref}}} \cos(n \frac{2 \pi}{\omega_{ref}} \xi)$ with
+different $n$ are orthonormal to each other on a segment $[-\omega_{ref}/2, \omega_{ref}/2]$. They constitute a basis on that
+segment for functions called \textbf{even functions}, that is function $f(x)$ is even if $f(x)=f(-x)$. Our ideal filter
+\ref{idealfilter} is an even function. You can find $\phi_{n}$ calculating a scalar product of $F(\xi)$ in \ref{idealfilter} and
+functions from our basis set and normalising. Introduce a variable $a \leq 1$, so $\omega_{0} = a \omega_{ref}/2$. We get the
+following:
 \begin{equation}
 \begin{aligned}
 \phi_{0} = \frac{2}{\omega_{ref}}\int_{0}^{a \omega_{ref}/2}d\xi = a \\
 \phi_{n} = \frac{4}{\omega_{ref}}\int_{0}^{a \omega_{ref}/2}cos(n \frac{2 \pi}{\omega_{ref}} \xi)d\xi = \frac{2}{n \pi} sin (a \pi n)
 \end{aligned}
 \end{equation}
-A sequence $\{\phi_{0}, \phi_{1}/2, \phi_{2}/2, \cdots\}$ will constitute our filter. Note, that these coefficients do not depend on $\omega_{ref}$. If you convolve this sequence with your signal
-by \ref{discconv}, you will get a new signal, in which all frequencies above $a\omega_{ref}/2$ are cut (the original signal has frequencies up to $\omega_{ref}/2$). The process of finding
-$\{\phi_{0}, \phi_{1}, \phi_{2}, \cdots\}$ is called \textbf{Fourier series} decomposition, not to be confused with Fourier transform. Note, that Fourier transform of our filter is real-valued
-and you will not get any phase shift in frequencies below cutpoint, and sometimes phase shift of $\pi$ above it, but who cares?
+A sequence $\{\cdots, \phi_{2}/2, \phi_{1}/2, \phi_{0}, \phi_{1}/2, \phi_{2}/2, \cdots\}$ will constitute our filter. Note, that
+these coefficients do not depend on $\omega_{ref}$. If you convolve this sequence with your signal by \ref{discconv}, you will get
+a new signal, in which all frequencies above $a\omega_{ref}/2$ are cut (the original signal has frequencies up to
+$\omega_{ref}/2$). The process of finding $\{\phi_{0}, \phi_{1}, \phi_{2}, \cdots\}$ is called \textbf{Fourier series}
+decomposition, not to be confused with Fourier transform. Note, that Fourier transform of our filter is real-valued and you will
+not get any phase shift in frequencies below cutpoint, and sometimes phase shift of $\pi$ above it, but who cares?
 
 Good enough? No. An ideal filter has a discontinuity at $\left|\xi\right| = \omega_{0} = a \omega_{ref}/2$. Fourier series decomposition behaves very badly in the area around points of discontinuity. Even if
 you choose $N$ to be large enough, that "area of bad behaviour" will be smaller and smaller, but bad behaviour will not vanish at all. It's known as \textbf{Gibbs phenomenon}. Bad behaviour expresses itself as
-big oscillations around points of discontinuity. We can eliminate that behaviour by introducing a small transition region between preserved frequencies and cut frequencies. To do this, let's find a function which is:
+big oscillations around points of discontinuity. We can eliminate that behaviour by introducing a small transition region between
+preserved frequencies and cut frequencies. To do this, let's find a function $f(x)$ which has following properties:
 \begin{itemize}
-\item even;
-\item has a differential in all points belonging to $[0,1]$
-\item equals to 1 at 0 and 0 at 1
-\item its differential equals to 0 at 0 and 1
-\end{itemize}
-or, speaking math, we need to find such $f(x)$, so
-\begin{itemize}
-\item $f(x) = f(-x)$;
-\item $f(x) \in C[0,1]$
-\item $f(0) = 1$ and $f(1) = 0$
-\item $f'(0) = 0$ and $f'(1) = 0$
+\item is continuous and has (at least) $N$ derivatives in all points belonging to $[0,1]$;
+\item $f(0) = 1$ and $f(1) = 0$;
+\item $f^{(n)}(0) = f^{(n)}(1) = 0$ for $n = \overline{1,N}$
 \end{itemize}
 
-One function which satisfies our demands is $f(x) = x^{4} - 2x^{2} + 1$. Then you can substitute $x = \frac{\xi - (a\omega_{ref}/2 - \epsilon)}{2 \epsilon}$ and get a new filter:
+I propose two families of such functions. One is polynomial in $x$ and another is trigonometric polynomial. Let's start with
+polynomial in $x$. Define $f(x)$ like so:
+\begin{equation}
+  \label{polydef}
+  f(x) = 1 - x^{N+1}L_{1}(x) = (1-x)^{N+1}L_{2}(x)
+\end{equation}
+The first definition satisfies the conditions at point $x = 0$ and the second at point $x = 1$. We get an equation:
+\begin{equation}
+  \label{bezout1}
+  (1-x)^{N+1}L_{2}(x) + x^{N+1}L_{1}(x) = 1
+\end{equation}
+Polynomials $x^{N+1}$ and $(1-x)^{N+1}$ are relatively prime, so \ref{bezout1} is so-called Bezout equation. You can rewrite it
+like so:
+\begin{equation}
+  (1-x)^{N+1}P(x) + x^{N+1}P(1-x) = 1
+\end{equation}
+It admits a solution:
+\begin{equation}
+  \label{bezoutsol}
+  P(x) = \sum_{n=0}^{N}C_{N+n}^{n}x^{n}
+\end{equation}
+Substitute now $P(1-x)$ from \ref{bezoutsol} to the first definition of $f(x)$ (remembrer, $L_1(x) = P(1-x)$) in \ref{polydef}. You will get:
+\begin{equation}
+  \label{poly}
+  f(x) = 1 - x^{N+1}\sum_{n=0}^{N}C_{N+n}^{n}x^n
+\end{equation}
+
+I use this one of this family: $f(x) = 20x^7 - 70x^6 + 84x^5 - 35x^4+1$.
+
+\textbf{TODO: Write about trigonometric polynomials}.
+
+I introduce a transition region
+$[\frac{a\omega_{ref}}{2} (1-b), \frac{a\omega_{ref}}{2} (1+b)]$, $b \in [0,1]$ and a function that maps transition region onto
+segment $[0,1]$: $g(\omega) = \frac{\omega}{ab\omega_{ref}} - \frac{1-b}{2b}$. Then I define a new filter where $f(x)$ is one of
+\ref{poly}:
+
 \begin{equation}
 \label{notsoideal}
 F(\xi) = \left\{
 \begin{array}{rl}
-1 & \text{if } \left|\xi\right| < a\omega_{ref}/2-\epsilon,\\
-x^{4} - 2x^{2} + 1 & \text{if } a\omega_{ref}/2-\epsilon \leq \left|\xi\right| \leq a\omega_{ref}/2+\epsilon,\\
+1 & \text{if } \left|\xi\right| < a\omega_{ref}(1-b)/2,\\
+f(g(\left|\xi\right|)) & \text{if } a\omega_{ref}(1-b)/2 \leq \left|\xi\right| \leq a\omega_{ref}(1+b)/2,\\
 0 & \text{otherwise}.
 \end{array} \right.
 \end{equation}
-It has a transition region which width is $2\epsilon$, but it has differential in all its point. Fourier series for it will converge much faster and without Gibbs phenomenon.
+It has a transition region which width is $\frac{ab\omega_{ref}}{2}$, but it has $N$ first continuous derivatives in all of its
+points. Fourier series for it will converge much faster and without Gibbs phenomenon.
 
-I use $f(x)$ with some additional requirements:
-\begin{itemize}
-\item $f''(0) = 0$ and $f''(1) = 0$
-\item $f'''(0) = 0$ and $f'''(1) = 0$
-\end{itemize}
-This is my $f(x)$: $f(x) = 4x^{10}-15x^{8}+20x^{6}-10x^{4}+1$. Fourier series decomposition will converge even faster to this function when $n \to \infty$. Although decomposition coefficients can be calculated
+Although decomposition coefficients can be calculated
 explicitly, I prefer to compute them numerically by the \textbf{Simpson's formula} which is a method of precise numerical integration.
 
 \section{Error estimation}
+\textbf{This section may be out of date.}
 It also would be great to know how close Fourier series decomposition is to \ref{notsoideal} or to another filter with another polynomial. Remember, that decomposed signal is in the following form:
 \begin{equation}
 F(\xi) = \phi_{0} + \sum_{n=1}^{N}\frac{\phi_{n}}{2}cos(\frac{2\pi}{\omega_{ref}}n\xi)
@@ -261,6 +291,7 @@ efficient methods to do such a resampling, so my library supports only downsampl
 to support any ratio, but why bother?
 
 \section{Quality}
+\textbf{This section may be out of date.}
 In this section I will provide some comparison data as some measure of quality. I compared my resampler with swr, a standard resampler for FFmpeg. I used a sine wave with a frequency starting at 440Hz and increasing
 to 96kHz at exponential rate as an input signal. The input signal is taken with sampling rate 192kHz and its downsampled version has a sampling rate 48kHz. The signal was generated with SuperCollider, and spectrograms
 below was generated by SoX. My library easy-audio was used to read from and write to wav audio files.
@@ -287,6 +318,7 @@ and with a transition range $b=1/20$ and an error $0.0001$. Settings which use f
 \end{figure}
 
 \section{Conclusion}
+\textbf{This section may be out of date.}
 Although cl-audio-downsample shows test results comparable to FFmpeg's swr, it's no match for soxr resampler. It also has implementation limitations, e.g. it cannot downsample from 96kHz to 44.1kHZ (only to 48KHz). What's more
 important, is that I observed that aliasing does not vanish much when you choose $b: 0 < b < 1/20$ with some constant error. I cannot explain it now, maybe it's just a computational error. It's also not very fast, but this is
 most certainly a flaw of the implementation.
