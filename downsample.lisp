@@ -18,20 +18,20 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   (declare (type double-float w))
   (/
    (+
-    (* -1d0 (cos (* 3 pi w)))
-    (* 9d0 (cos (* pi w)))
-    8d0)
-   16d0))
+    (* -1 (cos (* 3 pi w)))
+    (* 9 (cos (* pi w)))
+    8)
+   16))
 
 (defun transition-poly (w)
   "Transition region of low-pass filter, polynomial variant"
   (declare (type double-float w))
   (+
-   (* 20d0 (expt w 7))
-   (* -70d0 (expt w 6))
-   (* 84d0 (expt w 5))
-   (* -35d0 (expt w 4))
-   1d0))
+   (* 20 (expt w 7))
+   (* -70 (expt w 6))
+   (* 84 (expt w 5))
+   (* -35 (expt w 4))
+   1))
 
 (defvar *transition-function* #'transition-poly
   "Which transition function to use?")
@@ -45,9 +45,9 @@ Smaller values of *TRANSITION* require a filter of higher order.")
        (loop for x from min to max by delta sum
             (let ((x1 x)
                   (x2 (+ x delta))
-                  (x3 (+ x (/ delta 2d0))))
+                  (x3 (+ x (/ delta 2))))
               (+ (funcall func x1)
-                 (* 4d0 (funcall func x3))
+                 (* 4 (funcall func x3))
                  (funcall func x2)))))))
 
 (defun get-filter-coeff (n)
@@ -56,11 +56,11 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   (if (zerop n) *cutoff*
       (flet ((integrand (w)
                (* (funcall *transition-function* w)
-                  (cos (* 2d0 pi n
+                  (cos (* 2 pi n
                           (+ (* *cutoff* *transition* w)
-                             (* *cutoff* (- 1d0 *transition*) 0.5d0)))))))
+                             (* *cutoff* (- 1 *transition*) 0.5)))))))
         (+ (/ (sin (* *cutoff* (- 1 *transition*) n pi)) (* pi n))
-           (* 2d0 *cutoff* *transition*
+           (* 2 *cutoff* *transition*
               (integrate-function #'integrand 0d0 1d0))))))
 
 (defun n-filter-coeffs (n)
@@ -77,7 +77,7 @@ Smaller values of *TRANSITION* require a filter of higher order.")
            (type (simple-array double-float) array flt)
            (type (integer 1 #.most-positive-fixnum) drop-ratio))
   (let* ((len1 (length array))
-         (len2 (- (length flt) 1))
+         (len2 (1- (length flt)))
          (res-len (floor len1 drop-ratio))
          (new-array (make-array res-len
                                 :initial-element 0d0
@@ -85,45 +85,14 @@ Smaller values of *TRANSITION* require a filter of higher order.")
     (declare (type (simple-array double-float) new-array))
     (loop
        for i fixnum from 0 below res-len
-       for array-center fixnum from 0 by drop-ratio
+       for idx1 fixnum from 0 by drop-ratio
        do
-         (loop for j from (- len2) to len2 do
-              (let ((idx (+ array-center j)))
-                (setq idx
-                      (cond
-                        ((< idx 0) (- idx))
-                        ((>= idx len1) (- (* 2 len1) 1 idx))
-                        (t idx)))
+         (loop
+            for j fixnum from (- len2) to len2
+            for idx2 fixnum from 0 by 1 do
+              (let ((idx (- idx1 idx2)))
                 (incf (aref new-array i)
-                      (* (aref array idx)
-                         (aref flt (abs j)))))))
-    new-array))
-
-(defun convolve (array flt &optional (drop-ratio 1))
-  "Convolve two sequences"
-  (declare (optimize (speed 3))
-           (type (simple-array double-float) array flt)
-           (type (integer 1 #.most-positive-fixnum) drop-ratio))
-  (let* ((len1 (length array))
-         (len2 (- (length flt) 1))
-         (res-len (floor len1 drop-ratio))
-         (new-array (make-array res-len
-                                :initial-element 0d0
-                                :element-type 'double-float)))
-    (declare (type (simple-array double-float) new-array))
-    (loop
-       for i fixnum from 0 below res-len
-       for array-center fixnum from 0 by drop-ratio
-       do
-         (loop for j from (- len2) to len2 do
-              (let ((idx (+ array-center j)))
-                (setq idx
-                      (cond
-                        ((< idx 0) (- idx))
-                        ((>= idx len1) (- (* 2 len1) 1 idx))
-                        (t idx)))
-                (incf (aref new-array i)
-                      (* (aref array idx)
+                      (* (if (< idx 0) 0d0 (aref array idx))
                          (aref flt (abs j)))))))
     new-array))
 
