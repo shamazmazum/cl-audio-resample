@@ -1,4 +1,4 @@
-(in-package cl-audio-downsample)
+(in-package cl-audio-resample)
 
 (deftype range-01 () '(single-float 0.0 1.0))
 (deftype positive-fixnum () '(integer 1 #.most-positive-fixnum))
@@ -154,15 +154,37 @@ Smaller values of *TRANSITION* require a filter of higher order.")
                       single-float))))
     output))
 
-(defun resample (array up down &key
-                                 (filter-length 250)
-                                 (transition-function :poly)
-                                 (transition *transition*))
-  (let ((*transition* transition)
-        (*cutoff* (float (/ (max up down)) 0.0))
-        (*transition-function*
-         (ecase transition-function
-           (:poly #'transition-poly)
-           (:poly-fast #'transition-poly-fast)
-           (:trig-poly #'transition-trig-poly))))
-    (resample-with-filtering array up down filter-length)))
+(defun up-down (old-samplerate new-samplerate)
+  (declare (type positive-fixnum old-samplerate new-samplerate))
+  (let ((ratio (/ new-samplerate old-samplerate)))
+    (values (numerator ratio)
+            (denominator ratio))))
+
+(defun resample (array old-samplerate new-samplerate
+                 &key
+                   (filter-length 250)
+                   (transition-function :trig-poly)
+                   (transition *transition*))
+  "Perform resampling of audio data in ARRAY from OLD-SAMPLERATE to
+NEW-SAMPLERATE. Higher value of FILTER-LENGTH usually gives a better
+result but higher computation time. Smaller TRANSITION cuts
+frequencies which are just above cutoff frequency more effectively but
+requires higher FILTER-LENGTH. Usually, default values for keyed
+arguments are OK."
+  (declare (type (simple-array single-float (*)) array)
+           (type positive-fixnum
+                 old-samplerate
+                 new-samplerate
+                 filter-length)
+           (type single-float transition))
+
+  (multiple-value-bind (up down)
+      (up-down old-samplerate new-samplerate)
+    (let ((*transition* transition)
+          (*cutoff* (float (/ (max up down)) 0.0))
+          (*transition-function*
+           (ecase transition-function
+             (:poly #'transition-poly)
+             (:poly-fast #'transition-poly-fast)
+             (:trig-poly #'transition-trig-poly))))
+      (resample-with-filtering array up down filter-length))))

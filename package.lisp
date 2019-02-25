@@ -1,5 +1,5 @@
-(defpackage cl-audio-downsample
+(defpackage cl-audio-resample
   (:use #:cl)
-  (:export #:downsample
+  (:export #:resample
            #:*transition*
            #:*cutoff*))
