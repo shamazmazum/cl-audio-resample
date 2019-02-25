@@ -1,7 +1,7 @@
 cl-audio-resample
 ===================
 
-**cl-audio-resample** is an amature audio resampler ;-)
+**cl-audio-resample** is an amateur audio resampler ;-)
 
 You can resample your audio data (in the form of array of single-floats) like so:
 ~~~~~~{.lisp}
