@@ -6,10 +6,10 @@
 (declaim (type range-01 *cutoff* *transition*)
          (type positive-fixnum *integration-steps*)
          (type single-float +single-pi+))
-(defvar *transition* (/ 15.0)
+(defparameter *transition* (/ 15.0)
   "Width of transition region, must be < 1d0. Values from 1/20 to 1/7 are good.
 Smaller values of *TRANSITION* require a filter of higher order.")
-(defvar *cutoff* (/ 2.0)
+(defparameter *cutoff* (/ 2.0)
   "How much of the original band to keep? Varies from 0d0 to 1d0")
 (defparameter *integration-steps* 250
   "Number of integration steps in filter fourier decomposition")
@@ -135,8 +135,7 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   (let* ((in-length (length array))
          (out-length (floor (* in-length up) down))
          (output (make-array out-length
-                             :element-type 'single-float
-                             :initial-element 0.0))
+                             :element-type 'single-float))
          (filter (get-filter-bank up filter-length)))
     (declare (type (simple-array single-float (* *)) filter))
     (loop for i fixnum below out-length do
