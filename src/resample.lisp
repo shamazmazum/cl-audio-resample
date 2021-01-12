@@ -18,16 +18,12 @@ Smaller values of *TRANSITION* require a filter of higher order.")
 (defvar *filter-bank-table* (make-hash-table :test #'equalp)
   "Filter bank memo")
 
-(declaim (ftype (function (range-01 &optional) range-01)
-                transition-poly
-                transition-poly-fast
-                transition-trig-poly)
-         (type (function (range-01 &optional) range-01)
+(declaim (type (function (single-float &optional) single-float)
                *transition-function*))
 
 (defun transition-trig-poly (w)
   "Transition region of low-pass filter, trigonometric polynomial variant"
-  (declare (type range-01 w)
+  (declare (type single-float w)
            (optimize (speed 3)))
   (/
    (+
@@ -36,25 +32,22 @@ Smaller values of *TRANSITION* require a filter of higher order.")
     8)
    16))
 
+(defun calculate-polynomial (x &rest coeff)
+  "Calculate polynomial over X with gives single-float coefficients COEFF"
+  (declare (optimize (speed 3))
+           (type single-float x))
+  (flet ((reduce-poly (acc c)
+           (declare (type single-float acc c))
+           (+ (* x acc) c)))
+  (reduce #'reduce-poly coeff)))
+
 (defun transition-poly (w)
   "Transition region of low-pass filter, better convergence polynomial variant"
-  (declare (type range-01 w)
-           (optimize (speed 3)))
-  (+
-   (* 20 (expt w 7))
-   (* -70 (expt w 6))
-   (* 84 (expt w 5))
-   (* -35 (expt w 4))
-   1))
+  (calculate-polynomial w 20.0 -70.0 84.0 -35.0 0.0 0.0 0.0 1.0))
 
 (defun transition-poly-fast (w)
   "Transition region of low-pass filter, faster calculation polynomial variant"
-  (declare (type range-01 w)
-           (optimize (speed 3)))
-  (+
-   (* 2 (expt w 3))
-   (* -3 (expt w 2))
-   1))
+  (calculate-polynomial w 2.0 -3.0 0.0 1.0))
 
 (defvar *transition-function* #'transition-poly
   "Which transition function to use?")
@@ -143,14 +136,15 @@ Smaller values of *TRANSITION* require a filter of higher order.")
              (floor (* i down) up)
            (declare (type (integer 0 #.most-positive-fixnum) input-idx filter-idx))
            (setf (aref output i)
-                 (loop
-                    for j fixnum below filter-length
-                    for idx fixnum = (- input-idx j)
-                    sum
-                      (* up
-                         (aref filter filter-idx j)
-                         (if (< idx 0) 0.0 (aref array idx)))
-                      single-float))))
+                 (* up
+                    (loop
+                      for j fixnum below filter-length
+                      for idx fixnum = (- input-idx j)
+                      sum
+                      (*
+                       (aref filter filter-idx j)
+                       (if (< idx 0) 0.0 (aref array idx)))
+                      single-float)))))
     output))
 
 (defun up-down (old-samplerate new-samplerate)
