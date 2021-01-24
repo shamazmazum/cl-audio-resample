@@ -1,14 +1,14 @@
 (in-package :resample-examples)
 
-(defun clamp (x)
-  "Put X in [0,1] range"
+(defun clamp (x min max)
+  "Put X in [min, max] range"
   (declare (optimize (speed 3))
-           (type single-float x))
-  (min (max x 0f0) 1f0))
+           (type (signed-byte 32) x min max))
+  (min (max x min) max))
 
 (defun convert-to-float (channel bps)
   (declare (optimize (speed 3))
-           (type (simple-array (unsigned-byte 32)) channel)
+           (type (simple-array (signed-byte 32)) channel)
            (type (integer 8 32) bps))
   (let ((new-channel (make-array (length channel)
                                  :element-type 'single-float)))
@@ -26,8 +26,11 @@
                                  :element-type '(signed-byte 32))))
     (map-into new-channel
               (lambda (sample)
-                (floor (scale-float (clamp sample)
-                                    (1- bps))))
+                (clamp
+                 (floor (+ (scale-float sample (1- bps))
+                           (random 1f0)))
+                 ( - (ash 1 (1- bps)))
+                 (1- (ash 1 (1- bps)))))
               channel)))
 
 (defun resample-wav (input-name output-name
@@ -42,9 +45,9 @@ in RESAMPLE-ARGS"
            (bps (wav:format-bps format)))
       (wav:reader-position-to-audio-data reader meta)
       (flet ((resample-channel (channel)
-               (channel2int
+               (convert-to-integer
                 (apply #'resample:resample
-                       (channel2float (wav:decode-wav-data format channel))
+                       (convert-to-float (wav:decode-wav-data format channel) bps)
                        (wav:format-samplerate format)
                        new-samplerate
                        resample-args)
