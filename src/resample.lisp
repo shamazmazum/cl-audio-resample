@@ -87,9 +87,9 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   "Calculate PHASESxLENGTH multiphase low-pass filter bank"
   (declare (type unsigned-byte length phases))
   (let* ((total-length (* phases length))
-         (max-idx (if (zerop (logand 1 total-length))
-                      (1- total-length) total-length))
-         (lin-len (/ (1- max-idx) 2))
+         ;; Our filter length is odd
+         (max-idx (1- (logand (1+ total-length) -2)))
+         (linear-length (/ (1+ max-idx) 2))
          (filter (make-array (list phases length)
                              :element-type 'single-float)))
     (loop for i below phases do
@@ -97,7 +97,7 @@ Smaller values of *TRANSITION* require a filter of higher order.")
               (setf (aref filter i j)
                     (let ((idx (+ (* j phases) i)))
                       (if (< idx max-idx)
-                          (get-filter-coeff (abs (- idx lin-len)))
+                          (get-filter-coeff (abs (- idx (1- linear-length))))
                           0.0)))))
     filter))
 
@@ -105,13 +105,15 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   (phases 1 :type positive-fixnum)
   (length 1 :type positive-fixnum)
   (cutoff 0.0 :type single-float)
-  (transition 0.0 :type single-float))
+  (transition 0.0 :type single-float)
+  (transition-fn #'identity :type function))
 
 (defun get-filter-bank (phases length)
   (let ((filter-id (make-filter-bank-id :phases phases
                                         :length length
                                         :cutoff *cutoff*
-                                        :transition *transition*)))
+                                        :transition *transition*
+                                        :transition-fn *transition-function*)))
   (multiple-value-bind (filter filter-found-p)
       (gethash filter-id
                *filter-bank-table*)
