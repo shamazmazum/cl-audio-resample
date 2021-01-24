@@ -1,21 +1,33 @@
 (in-package :resample-examples)
 
-(defun channel2float (channel)
-  (let ((new-channel (make-array (length channel) :element-type 'single-float)))
+(defun clamp (x)
+  "Put X in [0,1] range"
+  (declare (optimize (speed 3))
+           (type single-float x))
+  (min (max x 0f0) 1f0))
+
+(defun convert-to-float (channel bps)
+  (declare (optimize (speed 3))
+           (type (simple-array (unsigned-byte 32)) channel)
+           (type (integer 8 32) bps))
+  (let ((new-channel (make-array (length channel)
+                                 :element-type 'single-float)))
     (map-into new-channel
               (lambda (sample)
-                (float sample 0f0))
+                (scale-float (float sample 0f0)
+                             (- (1- bps))))
               channel)))
 
-(defun channel2int (channel bps)
-  (let ((new-channel (make-array (length channel) :element-type '(signed-byte 32)))
-        (min (- (ash 1 (1- bps))))
-        (max (1- (ash 1 (1- bps)))))
+(defun convert-to-integer (channel bps)
+  (declare (optimize (speed 3))
+           (type (simple-array single-float) channel)
+           (type (integer 8 32) bps))
+  (let ((new-channel (make-array (length channel)
+                                 :element-type '(signed-byte 32))))
     (map-into new-channel
               (lambda (sample)
-                (max
-                 (min max (truncate sample))
-                 min))
+                (floor (scale-float (clamp sample)
+                                    (1- bps))))
               channel)))
 
 (defun resample-wav (input-name output-name
@@ -41,7 +53,7 @@ in RESAMPLE-ARGS"
                              (wav:read-wav-data reader format (wav:samples-num meta) :decompose t)))
                (new-nsamples (length (first data))))
           (utils:with-output-to-wav (out output-name
-                                         :supersede nil
+                                         :supersede t
                                          :samplerate new-samplerate
                                          :channels channels
                                          :bps bps
