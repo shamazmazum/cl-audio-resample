@@ -140,12 +140,12 @@ Smaller values of *TRANSITION* require a filter of higher order.")
            (setf (aref output i)
                  (* up
                     (loop
-                      for j fixnum below filter-length
+                      for j fixnum below (min input-idx filter-length)
                       for idx fixnum = (- input-idx j)
                       sum
                       (*
                        (aref filter filter-idx j)
-                       (if (< idx 0) 0.0 (aref array idx)))
+                       (aref array idx))
                       single-float)))))
     output))
 
