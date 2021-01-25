@@ -15,7 +15,7 @@ Smaller values of *TRANSITION* require a filter of higher order.")
   "Number of integration steps in filter fourier decomposition")
 (defconstant +single-pi+ (float pi 0.0)
   "Single float pi constant")
-(defvar *filter-bank-table* (make-hash-table :test #'equalp)
+(defparameter *filter-bank-table* (make-hash-table :test #'equalp)
   "Filter bank memo")
 
 (declaim (type (function (single-float &optional) single-float)
@@ -71,17 +71,17 @@ Smaller values of *TRANSITION* require a filter of higher order.")
 
 (defun get-filter-coeff (n)
   "N-th filter coefficient"
-  (declare (type (unsigned-byte 32) n)
-           (optimize (speed 3)))
+  (declare (optimize (speed 3))
+           (type (unsigned-byte 32) n))
   (if (zerop n) *cutoff*
-      (flet ((integrand (w)
-               (* (funcall *transition-function* w)
-                  (cos (* 2 +single-pi+ n
-                          (+ (* *cutoff* *transition* w)
-                             (* *cutoff* (- 1 *transition*) 0.5)))))))
-        (+ (/ (sin (* *cutoff* (- 1 *transition*) n +single-pi+)) (* +single-pi+ n))
-           (* 2 *cutoff* *transition*
-              (integrate-function #'integrand 0.0 1.0))))))
+      (let ((chunk-1 (* +single-pi+ n *cutoff* (- 1 *transition*)))
+            (chunk-2 (* 2 n +single-pi+))
+            (chunk-3 (* *cutoff* *transition*)))
+        (flet ((integrand (w)
+                 (* (funcall *transition-function* w)
+                    (cos (+ (* chunk-2 chunk-3 w) chunk-1)))))
+          (* 2f0 (+ (/ (sin chunk-1) chunk-2)
+                    (* chunk-3 (integrate-function #'integrand 0f0 1f0))))))))
 
 (defun filter-bank (phases length)
   "Calculate PHASESxLENGTH multiphase low-pass filter bank"
