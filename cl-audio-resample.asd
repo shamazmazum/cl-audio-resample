@@ -2,10 +2,15 @@
   :description "Audio resampling library"
   :serial t
   :version "1.0"
-  :components ((:file "src/package")
-               #+sbcl
-               (:file "src/sbcl")
-               (:file "src/resample")
-               (:file "examples/package")
-               (:file "examples/resample-wav"))
-  :depends-on (:easy-audio))
+  :pathname "src"
+  :components ((:file "package")
+               (:file "resample")))
+
+(defsystem :cl-audio-resample/examples
+  :description "Audio resampling library (examples)"
+  :serial t
+  :version "1.0"
+  :pathname "examples"
+  :components ((:file "package")
+               (:file "resample-wav"))
+  :depends-on (:easy-audio :cl-audio-resample))

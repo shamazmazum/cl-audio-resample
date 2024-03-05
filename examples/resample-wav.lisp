@@ -1,4 +1,4 @@
-(in-package :resample-examples)
+(in-package :resample/examples)
 
 (defun clamp (x min max)
   "Put X in [min, max] range"
@@ -55,14 +55,14 @@ in RESAMPLE-ARGS"
         (let* ((data (mapcar #'resample-channel
                              (wav:read-wav-data reader format (wav:samples-num meta) :decompose t)))
                (new-nsamples (length (first data))))
-          (utils:with-output-to-wav (out output-name
-                                         :supersede t
-                                         :samplerate new-samplerate
-                                         :channels channels
-                                         :bps bps
-                                         :totalsamples new-nsamples)
+          (wav:with-output-to-wav (out output-name
+                                       :supersede t
+                                       :samplerate new-samplerate
+                                       :channels channels
+                                       :bps bps
+                                       :totalsamples new-nsamples)
             (write-sequence
-             (utils:mixchannels
+             (core:mixchannels
               (make-array (* new-nsamples channels) :element-type '(signed-byte 32))
               data)
              out))))))
